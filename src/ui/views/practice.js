@@ -55,8 +55,12 @@ export function renderPractice(root, route) {
 
   // ---- header -----------------------------------------------------------------------
   const title = isBridge ? `Bridge: passages ${p + 1} → ${p + 2}` : `Passage ${p + 1} of ${text.passages.length}`;
-  const prevHref = !isBridge && p > 0 ? link(['practice', text.id, p - 1], { mode: mode === 'check' ? 'watch' : mode }) : null;
-  const nextHref = !isBridge && p + 1 < text.passages.length ? link(['practice', text.id, p + 1], { mode: mode === 'check' ? 'watch' : mode }) : null;
+  const hasPrev = !isBridge && p > 0;
+  const hasNext = !isBridge && p + 1 < text.passages.length;
+  // Neighbouring passages open in the current mode (Check becomes Watch).
+  const neighbour = (/** @type {number} */ q) => link(['practice', text.id, q], { mode: mode === 'check' ? 'watch' : mode });
+  const prevLink = hasPrev ? h('a', { class: 'btn btn-quiet btn-round', href: neighbour(p - 1), 'aria-label': 'Previous passage', title: 'Previous passage' }, h('span', { 'aria-hidden': 'true' }, '‹')) : null;
+  const nextLink = hasNext ? h('a', { class: 'btn btn-quiet btn-round', href: neighbour(p + 1), 'aria-label': 'Next passage', title: 'Next passage' }, h('span', { 'aria-hidden': 'true' }, '›')) : null;
   const preview = textSpan(text, unitsText(text, span.start, span.end), 'passage-preview', 'p');
   const ladderHost = h('span', { class: 'ladder-host' });
 
@@ -69,12 +73,7 @@ export function renderPractice(root, route) {
       { class: 'practice-title' },
       h('h1', null, title),
       ladderHost,
-      h(
-        'nav',
-        { class: 'passage-nav', 'aria-label': 'Other passages' },
-        prevHref ? h('a', { class: 'btn btn-quiet btn-round', href: prevHref, 'aria-label': 'Previous passage', title: 'Previous passage' }, h('span', { 'aria-hidden': 'true' }, '‹')) : null,
-        nextHref ? h('a', { class: 'btn btn-quiet btn-round', href: nextHref, 'aria-label': 'Next passage', title: 'Next passage' }, h('span', { 'aria-hidden': 'true' }, '›')) : null,
-      ),
+      h('nav', { class: 'passage-nav', 'aria-label': 'Other passages' }, prevLink, nextLink),
     ),
     preview,
   );
@@ -109,7 +108,7 @@ export function renderPractice(root, route) {
   const levelInfo = h('p', { class: 'level-info' });
   function renderLevelInfo() {
     const l = levelById(level);
-    levelInfo.replaceChildren(h('strong', null, `${l.plain}. `), l.blurb, ' ', h('span', { class: 'scheme', 'aria-label': `Pattern: ${l.scheme}` }, l.scheme));
+    levelInfo.replaceChildren(h('strong', null, `${l.plain}. `), l.blurb, ' ', h('span', { class: 'scheme' }, l.scheme));
   }
 
   // ---- mode tabs ------------------------------------------------------------------------
@@ -154,26 +153,31 @@ export function renderPractice(root, route) {
 
   function syncUrl() {
     history.replaceState(null, '', link(['practice', text.id, target], { level, mode }));
+    prevLink?.setAttribute('href', neighbour(p - 1));
+    nextLink?.setAttribute('href', neighbour(p + 1));
   }
 
-  /** @param {LevelId} l */
-  function setLevel(l) {
-    if (l === level) return;
-    level = l;
+  /**
+   * Change level and/or mode, then render once.
+   * @param {{ level?: LevelId, mode?: Mode }} next
+   */
+  function show(next) {
+    const newLevel = next.level ?? level;
+    const newMode = next.mode ?? mode;
+    if (newLevel === level && newMode === mode) return;
+    const levelChanged = newLevel !== level;
+    level = newLevel;
+    mode = newMode;
     syncUrl();
-    renderLevels();
-    renderLevelInfo();
-    renderPanel();
-  }
-
-  /** @param {Mode} m */
-  function setMode(m) {
-    if (m === mode) return;
-    mode = m;
-    syncUrl();
+    if (levelChanged) {
+      renderLevels();
+      renderLevelInfo();
+    }
     renderTabs();
     renderPanel();
   }
+  const setLevel = (/** @type {LevelId} */ l) => show({ level: l });
+  const setMode = (/** @type {Mode} */ m) => show({ mode: m });
 
   // ---- panels -------------------------------------------------------------------------
   function renderPanel() {
@@ -281,6 +285,16 @@ export function renderPractice(root, route) {
     const pct = Math.round(summary.accuracy * 100);
     const headline = summary.perfect ? 'Every word in place.' : pct >= 90 ? 'Well woven.' : pct >= 70 ? 'A few loose threads.' : 'Keep weaving.';
     const lines = [];
+    if (isBridge) {
+      lines.push(h('li', null, 'The join between the two passages was practised; its links are updated below.'));
+      return h(
+        'div',
+        { class: 'outcome' },
+        h('p', { class: 'outcome-headline' }, headline),
+        h('p', { class: 'outcome-stats' }, `${summary.got} of ${summary.total} right first time`, summary.unsure ? ` · ${summary.unsure} unsure` : '', summary.missed ? ` · ${summary.missed} missed` : '', summary.answered ? ` · ${pct}%` : ''),
+        h('ul', { class: 'outcome-list' }, lines),
+      );
+    }
     if (newlyWoven) lines.push(h('li', { class: 'win' }, 'This passage is now woven: ghana without an error on two different days.'));
     else if (woven) lines.push(h('li', null, 'This passage is woven.'));
     if (newlyCleared) lines.push(h('li', { class: 'win' }, 'You cleared ', levelLabel(last.level), '.'));
@@ -316,10 +330,10 @@ export function renderPractice(root, route) {
       h('button', { type: 'button', class: `btn ${last && !last.outcome.cleared ? 'btn-primary' : 'btn-secondary'}`, onclick: () => setMode('recall') }, icon('restart'), h('span', null, 'Recall again')),
     ];
     if (nextLevel && last?.outcome.cleared) {
-      actions.unshift(h('button', { type: 'button', class: 'btn btn-primary', onclick: () => { setLevel(nextLevel.id); setMode('watch'); } }, h('span', null, `Next level: ${nextLevel.name}`), icon('arrow')));
+      actions.unshift(h('button', { type: 'button', class: 'btn btn-primary', onclick: () => show({ level: nextLevel.id, mode: 'watch' }) }, h('span', null, `Next level: ${nextLevel.name}`), icon('arrow')));
     }
     if (weakHere) actions.push(linkButton(`Drill weak links (${weakHere})`, link(['drill', text.id], { from: span.start, to: span.end }), { kind: 'secondary' }));
-    if (!isBridge && nextHref && (rec ? highestCleared(rec) > 0 : false)) actions.push(linkButton('Next passage', link(['practice', text.id, p + 1], { mode: 'watch' }), { kind: 'quiet' }));
+    if (hasNext && (rec ? highestCleared(rec) > 0 : false)) actions.push(linkButton('Next passage', link(['practice', text.id, p + 1], { mode: 'watch' }), { kind: 'quiet' }));
     if (!isBridge && p + 1 < text.passages.length && rec?.rounds && getPassage(progress, text.passages[p + 1])?.rounds) {
       actions.push(linkButton(`Bridge to passage ${p + 2}`, link(['practice', text.id, `b${p}`], { level: 'jata', mode: 'recall' }), { kind: 'quiet' }));
     }

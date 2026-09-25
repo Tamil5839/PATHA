@@ -8,9 +8,12 @@
 // Every stat is an exponential moving average of recall scores:
 //   first observation:  s = score
 //   afterwards:         s = s + ALPHA × (score − s)
-// A round contributes one update per link direction and per word: the mean
-// of that round's scores for it, so a ghana round (many repetitions) moves a
-// link no faster than a krama round.
+// A round contributes one update per link direction and per word: its worst
+// score in that round. Dense patterns recite a link several times, and the
+// later repetitions are primed by the earlier ones, so averaging would hide a
+// slip; one slip is exactly what the weak-link drills should catch. One
+// update per round also means a ghana round (many repetitions) moves a link
+// no faster than a krama round.
 
 /** @typedef {import('./patterns.js').Token} Token */
 /** @typedef {{ s: number, n: number, last: number }} Stat  strength 0..1, updates, last update (ms) */
@@ -56,32 +59,36 @@ export function statusOf(strength) {
 
 /**
  * @typedef {Object} RoundResults
- * @property {{ index: number, dir: 'f'|'b', mean: number, count: number }[]} links
- * @property {{ item: number, mean: number, count: number }[]} words
+ * @property {{ index: number, dir: 'f'|'b', score: number, mean: number, count: number }[]} links
+ * @property {{ item: number, score: number, mean: number, count: number }[]} words
+ *   score: the worst score in the round (what is recorded); mean: average
  */
 
 /**
- * Aggregate one round: the mean score of each link direction and each word
- * it exercised. Unanswered tokens (score null) are skipped.
+ * Aggregate one round: for each link direction and each word it exercised,
+ * the worst score, the mean and the number of times recited. Unanswered
+ * tokens (score null) are skipped.
  * @param {Token[]} tokens
  * @param {(number|null)[]} scores  one per token
  * @returns {RoundResults}
  */
 export function roundResults(tokens, scores) {
-  /** @type {Map<string, { index: number, dir: 'f'|'b', sum: number, count: number }>} */
+  /** @type {Map<string, { index: number, dir: 'f'|'b', min: number, sum: number, count: number }>} */
   const links = new Map();
-  /** @type {Map<number, { item: number, sum: number, count: number }>} */
+  /** @type {Map<number, { item: number, min: number, sum: number, count: number }>} */
   const words = new Map();
   tokens.forEach((t, k) => {
     const score = scores[k];
     if (score == null) return;
-    const w = words.get(t.item) ?? { item: t.item, sum: 0, count: 0 };
+    const w = words.get(t.item) ?? { item: t.item, min: 1, sum: 0, count: 0 };
+    w.min = Math.min(w.min, score);
     w.sum += score;
     w.count += 1;
     words.set(t.item, w);
     if (t.link) {
       const key = `${t.link.index}${t.link.dir}`;
-      const l = links.get(key) ?? { index: t.link.index, dir: t.link.dir, sum: 0, count: 0 };
+      const l = links.get(key) ?? { index: t.link.index, dir: t.link.dir, min: 1, sum: 0, count: 0 };
+      l.min = Math.min(l.min, score);
       l.sum += score;
       l.count += 1;
       links.set(key, l);
@@ -89,10 +96,10 @@ export function roundResults(tokens, scores) {
   });
   return {
     links: [...links.values()]
-      .map(({ index, dir, sum, count }) => ({ index, dir, mean: sum / count, count }))
+      .map(({ index, dir, min, sum, count }) => ({ index, dir, score: min, mean: sum / count, count }))
       .sort((a, b) => a.index - b.index || a.dir.localeCompare(b.dir)),
     words: [...words.values()]
-      .map(({ item, sum, count }) => ({ item, mean: sum / count, count }))
+      .map(({ item, min, sum, count }) => ({ item, score: min, mean: sum / count, count }))
       .sort((a, b) => a.item - b.item),
   };
 }
@@ -112,10 +119,10 @@ export function roundResults(tokens, scores) {
 export function applyRoundResults(memory, results, now) {
   for (const l of results.links) {
     const entry = (memory.links[l.index] ??= {});
-    entry[l.dir] = updateStat(entry[l.dir], l.mean, now);
+    entry[l.dir] = updateStat(entry[l.dir], l.score, now);
   }
   for (const w of results.words) {
-    memory.words[w.item] = updateStat(memory.words[w.item], w.mean, now);
+    memory.words[w.item] = updateStat(memory.words[w.item], w.score, now);
   }
 }
 

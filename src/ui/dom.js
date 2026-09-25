@@ -4,7 +4,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /**
  * @typedef {Record<string, any>} Props
- * @typedef {Node|string|number|null|undefined|false|Child[]} Child
+ * @typedef {Node|string|number|null|undefined|false|any[]} Child
  */
 
 /**

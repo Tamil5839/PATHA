@@ -33,8 +33,8 @@ describe('link strength updates', () => {
     assert.equal(statusOf(m.links[0].f.s), 'strong');
     assert.equal(statusOf(m.links[0].b.s), 'weak');
     assert.equal(linkStrength(m, 0), 0, 'combined strength is the weaker direction');
-    // word 0 was recited three times, missed once
-    assert.equal(Math.round(m.words[0].s * 1000), 667);
+    // word 0 was recited three times and missed once: its worst score counts
+    assert.equal(m.words[0].s, 0);
     assert.equal(m.words[1].s, 1);
   });
 
@@ -62,7 +62,7 @@ describe('link strength updates', () => {
     assert.deepEqual(Object.keys(p.words), ['4', '5', '6']);
   });
 
-  test('ghana: one update per link direction per round, from the mean score', () => {
+  test('ghana: one update per link direction per round', () => {
     const m = fresh();
     const { tokens, results } = round('ghana', [0, 1, 2], (t) => (t.link?.dir === 'b' && t.link.index === 1 ? 0.5 : 1));
     applyRoundResults(m, results, NOW);
@@ -71,6 +71,20 @@ describe('link strength updates', () => {
     assert.equal(m.links[1].b.n, 1);
     assert.equal(m.links[1].f.s, 1);
     assert.equal(m.links[0].b.s, 1);
+  });
+
+  test('one slip among many repetitions still shows: the worst score counts', () => {
+    // In ghana over three words the link 0→1 is recited forward three times.
+    const { tokens, results } = round('ghana', [0, 1, 2], () => 1);
+    const firstForward = tokens.findIndex((t) => t.link?.index === 0 && t.link.dir === 'f');
+    const scores = tokens.map((_, k) => (k === firstForward ? 0 : 1));
+    const slipped = roundResults(tokens, scores).links.find((l) => l.index === 0 && l.dir === 'f');
+    assert.deepEqual({ score: slipped.score, count: slipped.count }, { score: 0, count: 3 });
+    assert.equal(Math.round(slipped.mean * 1000), 667);
+    const m = fresh();
+    applyRoundResults(m, roundResults(tokens, scores), NOW);
+    assert.equal(statusOf(m.links[0].f.s), 'weak');
+    assert.equal(results.links.length, 4);
   });
 
   test('unanswered words (an unfinished round) are skipped', () => {

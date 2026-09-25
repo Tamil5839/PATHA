@@ -54,7 +54,7 @@ export function createWatch(container, options) {
   let timer = null;
   /** @type {ReturnType<typeof setInterval>|null} */
   let ticker = null;
-  /** @type {{ cancel: () => void }|null} */
+  /** @type {ReturnType<typeof speak>|null} */
   let utterance = null;
   let shownStep = -1;
   let voiceFailed = false;

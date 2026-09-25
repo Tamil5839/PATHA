@@ -29,10 +29,10 @@ export function statuses(items, { round = null, memory = null }) {
     for (const l of round.links) {
       if (!inRange.has(l.index) || !inRange.has(l.index + 1)) continue;
       const entry = links.get(l.index) ?? {};
-      entry[l.dir] = statusOf(l.mean);
+      entry[l.dir] = statusOf(l.score);
       links.set(l.index, entry);
     }
-    for (const w of round.words) if (inRange.has(w.item)) words.set(w.item, statusOf(w.mean));
+    for (const w of round.words) if (inRange.has(w.item)) words.set(w.item, statusOf(w.score));
   } else if (memory) {
     for (let i = 0; i + 1 < items.length; i++) {
       const index = items[i];

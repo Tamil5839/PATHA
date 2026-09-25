@@ -8,11 +8,16 @@
     "start": "node scripts/serve.mjs",
     "test": "node --test --test-reporter=spec \"tests/unit/**/*.test.js\"",
     "test:e2e": "playwright test",
-    "test:all": "npm test && npm run test:e2e"
+    "check": "tsc -p jsconfig.json",
+    "test:all": "npm run check && npm test && npm run test:e2e"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.56.1",
-    "fake-indexeddb": "6.2.5"
+    "fake-indexeddb": "6.2.5",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

@@ -10,6 +10,20 @@ import { combine } from '../core/backup.js';
 /** @typedef {import('../core/progress.js').Progress} Progress */
 /** @typedef {import('../core/backup.js').AppData} AppData */
 
+/**
+ * @typedef {Object} Settings
+ * @property {number} tempo
+ * @property {boolean} voice
+ * @property {boolean} pulse
+ * @property {boolean} speechInput
+ * @property {'letters'|'tap'|'speak'} recallMethod
+ * @property {'system'|'light'|'dark'} theme
+ * @property {'system'|'reduce'|'full'} motion
+ * @property {'jata'|'ghana'} drillLevel
+ * @property {Record<string, string>} voices
+ */
+
+/** @type {Readonly<Settings>} */
 export const DEFAULT_SETTINGS = Object.freeze({
   /** Words per minute in Watch mode. */
   tempo: 50,
@@ -28,10 +42,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   /** 'jata' | 'ghana' */
   drillLevel: 'ghana',
   /** Preferred voice per language: { [lang]: voiceURI } */
-  voices: /** @type {Record<string, string>} */ ({}),
+  voices: {},
 });
-
-/** @typedef {typeof DEFAULT_SETTINGS} Settings */
 
 /** @type {import('../storage/db.js').Storage|null} */
 let storage = null;

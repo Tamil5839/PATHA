@@ -8,7 +8,7 @@
 //            Got it / Unsure / Missed. Tapping a word marks just that word.
 //   speak    optional speech recognition, only where the browser has it.
 
-import { h, icon, announce } from './dom.js';
+import { h, icon, announce, reducedMotion } from './dom.js';
 import { radioKeys } from './components.js';
 import { matchStep, typedGraphemes, sameWord } from '../core/answer.js';
 import { unitText, segmentText } from '../core/segment.js';
@@ -148,9 +148,19 @@ export function createRecall(container, options) {
     if (score < 1) el.append(h('span', { class: 'sr-only' }, score > 0 ? ' (after a slip)' : ' (missed)'));
   }
 
+  /** @type {HTMLElement|null} */
+  let currentSlot = null;
+  let currentStep = -1;
+
+  // Touches only what changed, so long texts (final test) stay fast.
   function refresh() {
     const c = cursor(session);
-    slots.forEach((el, k) => el.classList.toggle('is-current', k === c && !finished));
+    const nextSlot = c < n && !finished ? slots[c] : null;
+    if (currentSlot !== nextSlot) {
+      currentSlot?.classList.remove('is-current');
+      nextSlot?.classList.add('is-current');
+      currentSlot = nextSlot;
+    }
     const done = session.scores.filter((x) => x !== null).length;
     /** @type {HTMLElement} */ (meter.firstChild).style.width = `${(100 * done) / Math.max(1, n)}%`;
     meter.setAttribute('aria-valuenow', String(done));
@@ -159,11 +169,14 @@ export function createRecall(container, options) {
     counts.textContent = `${done} of ${n} words${shaky ? ` · ${shaky} unsure` : ''}${missed ? ` · ${missed} missed` : ''}`;
     if (layout === 'steps' && c < n) {
       const si = tokens[c].step;
-      stepEls.forEach((li, i) => {
-        li.classList.toggle('is-current', i === si);
-        li.classList.toggle('is-done', i < si);
-        li.classList.toggle('is-future', i > si);
-      });
+      if (si !== currentStep) {
+        stepEls.forEach((li, i) => {
+          li.classList.toggle('is-current', i === si);
+          li.classList.toggle('is-done', i < si);
+          li.classList.toggle('is-future', i > si);
+        });
+        currentStep = si;
+      }
       scrollIntoViewIfNeeded(stepEls[si]);
     } else if (c < n) {
       scrollIntoViewIfNeeded(slots[c]);
@@ -175,7 +188,7 @@ export function createRecall(container, options) {
     const box = board.getBoundingClientRect();
     const r = el.getBoundingClientRect();
     if (r.top < box.top || r.bottom > box.bottom) {
-      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      el.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
     }
   }
 
@@ -280,12 +293,20 @@ export function createRecall(container, options) {
       icon('x'),
       h('span', null, 'Reveal word'),
     );
+    const ime = /^(ja|zh|ko)$/.test(text.lang.split('-')[0]);
     const panel = h(
       'div',
-      { class: 'answer-bar' },
-      h('label', { class: 'sr-only', for: 'letter-input' }, 'Type the first letter of each word'),
-      input,
-      revealBtn,
+      null,
+      h(
+        'div',
+        { class: 'answer-bar' },
+        h('label', { class: 'sr-only', for: 'letter-input' }, 'Type the first letter of each word'),
+        input,
+        revealBtn,
+      ),
+      ime
+        ? h('p', { class: 'hint' }, 'With an input method, type each word or phrase and commit it; the whole word counts. Tap to reveal also works well for this script.')
+        : null,
     );
     input.id = 'letter-input';
     letterInput = input;
@@ -528,6 +549,8 @@ export function createRecall(container, options) {
     session.scores.fill(null);
     session.wrong.fill(0);
     finished = false;
+    currentSlot = null;
+    currentStep = -1;
     tokens.forEach((_, k) => {
       slots[k].className = 'slot is-hidden';
       slots[k].onclick = null;

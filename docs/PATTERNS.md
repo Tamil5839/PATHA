@@ -100,6 +100,9 @@ practises `d e f g`.
   and trains no links.
 * Forward and backward directions are tracked separately. In jaṭā each link
   is recited forward twice and backward once per step.
+* Each round updates each link direction and word once, with its worst score
+  in that round. Dense patterns recite a link several times, and averaging
+  would hide a single slip.
 
 Scoring details are in `src/core/memory.js` and the scheduler in
 `src/core/scheduler.js`.

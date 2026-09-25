@@ -43,7 +43,7 @@ export function chunkUnits(units, { mode = 'sentence', maxWords = DEFAULT_MAX_WO
   return mergeFragments(units, spans, max, min);
 }
 
-/** @param {number} value */
+/** @param {number|string} value */
 export function clampMaxWords(value) {
   const v = Math.round(Number(value));
   if (!Number.isFinite(v)) return DEFAULT_MAX_WORDS;
