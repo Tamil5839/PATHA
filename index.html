@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Patha · memorize anything with Vedic recitation patterns</title>
+    <meta
+      name="description"
+      content="A free, private web app for learning any text by heart with the word-weaving recitation patterns of the Vedic oral tradition. Everything stays on your device."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#F3EAD7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1F1A17" media="(prefers-color-scheme: dark)" />
+    <!-- No remote calls: scripts, styles, fonts and data all come from this site. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="fonts/fonts.css" />
+    <link rel="stylesheet" href="styles/app.css" />
+    <script type="module" src="src/ui/main.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="#/" aria-label="Patha, home">
+          <svg class="brand-mark" viewBox="0 0 48 24" aria-hidden="true" focusable="false">
+            <path class="brand-thread" d="M6 12 C12 2, 18 2, 24 12 S36 22, 42 12" />
+            <path class="brand-thread brand-thread-back" d="M6 12 C12 22, 18 22, 24 12 S36 2, 42 12" />
+            <circle class="brand-bead" cx="6" cy="12" r="4.2" />
+            <circle class="brand-bead brand-bead-mid" cx="24" cy="12" r="4.2" />
+            <circle class="brand-bead" cx="42" cy="12" r="4.2" />
+          </svg>
+          <span class="brand-name">Patha</span>
+          <span class="brand-deva" lang="sa">पाठ</span>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="#/" data-nav="home">Texts</a>
+          <a href="#/review" data-nav="review">Review<span class="badge" id="review-badge" hidden></span></a>
+          <a href="#/about" data-nav="about">About</a>
+          <a href="#/settings" data-nav="settings" class="nav-icon" aria-label="Settings and backup" title="Settings and backup">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.6 5-1.8-.3a7 7 0 0 1-.7 1.7l1.1 1.5-1.8 1.8-1.5-1.1a7 7 0 0 1-1.7.7l-.3 1.8h-2.6l-.3-1.8a7 7 0 0 1-1.7-.7l-1.5 1.1-1.8-1.8 1.1-1.5a7 7 0 0 1-.7-1.7l-1.8-.3v-2.6l1.8-.3a7 7 0 0 1 .7-1.7L5.6 7l1.8-1.8 1.5 1.1a7 7 0 0 1 1.7-.7l.3-1.8h2.6l.3 1.8a7 7 0 0 1 1.7.7l1.5-1.1L18.4 7l-1.1 1.5a7 7 0 0 1 .7 1.7l1.8.3z" /></svg>
+          </a>
+        </nav>
+      </div>
+    </header>
+    <div id="status-banner" class="status-banner" role="status" hidden></div>
+    <main id="main" class="page" tabindex="-1">
+      <noscript>
+        <p class="noscript">Patha needs JavaScript. It runs entirely on your device and sends nothing anywhere.</p>
+      </noscript>
+    </main>
+    <footer class="site-footer">
+      <p>
+        Everything you add stays on this device. No accounts, no tracking.
+        <a href="#/about">About Patha and the tradition it learns from</a>
+      </p>
+    </footer>
+    <div id="live-polite" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+    <div id="live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+  </body>
+</html>

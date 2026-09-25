@@ -1,0 +1,14 @@
+{
+  "name": "Patha: memorize with Vedic recitation patterns",
+  "short_name": "Patha",
+  "description": "Learn any text by heart with the word-weaving recitation patterns of the Vedic oral tradition. Private and offline.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F3EAD7",
+  "theme_color": "#F3EAD7",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

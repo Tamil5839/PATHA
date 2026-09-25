@@ -13,11 +13,12 @@ import { weakLinksIn } from './memory.js';
  * stay short, so each drill stays a quick, focused pattern.
  * @param {MemoryRecord} memory
  * @param {number} wordCount
- * @param {{ limit?: number, maxWindow?: number }} [options]
+ * @param {{ limit?: number, maxWindow?: number, from?: number, to?: number }} [options]
+ *   from/to restrict the links considered to words [from, to)
  * @returns {{ links: number[], windows: Span[] }}
  */
-export function weakLinkWindows(memory, wordCount, { limit = 6, maxWindow = 6 } = {}) {
-  const links = weakLinksIn(memory, 0, wordCount)
+export function weakLinkWindows(memory, wordCount, { limit = 6, maxWindow = 6, from = 0, to = wordCount } = {}) {
+  const links = weakLinksIn(memory, Math.max(0, from), Math.min(wordCount, to))
     .slice(0, limit)
     .map((l) => l.index)
     .sort((a, b) => a - b);

@@ -151,6 +151,14 @@ describe('weak-link drills', () => {
     ]);
   });
 
+  test('a range restricts the links considered', () => {
+    const m = { links: {}, words: {} };
+    m.links[2] = { f: { s: 0.4, n: 1, last: 0 } };
+    m.links[9] = { f: { s: 0.2, n: 1, last: 0 } };
+    assert.deepEqual(weakLinkWindows(m, 20, { from: 0, to: 6 }).links, [2]);
+    assert.deepEqual(weakLinkWindows(m, 20, { from: 8, to: 20 }).windows, [{ start: 8, end: 12 }]);
+  });
+
   test('limit keeps only the weakest links', () => {
     const m = { links: {}, words: {} };
     for (let i = 0; i < 20; i += 4) m.links[i] = { f: { s: i / 40, n: 1, last: 0 } };

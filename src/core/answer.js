@@ -80,48 +80,52 @@ export function isIgnorableInput(typed) {
 }
 
 /**
- * Consume typed input against a sequence of expected words, first-letter
- * style. Returns one outcome per consumed grapheme: 'ok' (the word was
- * started correctly), 'wrong', or 'skip' (ignorable). An input method may
- * commit several characters at once, or a whole word (e.g. Japanese):
- * a committed string that begins with the whole expected word counts as that
- * word.
+ * Match the start of some typed input against one expected word,
+ * first-letter style. An input method may commit several characters at once,
+ * or a whole word (e.g. Japanese): input that begins with the whole expected
+ * word counts as that word.
+ * @param {string[]} input  typed graphemes, not empty
+ * @param {string} word     the expected word
+ * @returns {{ result: 'ok'|'wrong'|'skip', used: number }} outcome and how
+ *   many graphemes of the input it used
+ */
+export function matchStep(input, word) {
+  const g = input[0];
+  if (isIgnorableInput(g)) return { result: 'skip', used: 1 };
+  const wordGs = graphemes(word.normalize('NFC')).map((x) => x.s);
+  const n = wordGs.length;
+  if (n > 1 && input.length >= n && sameWord(input.slice(0, n).join(''), word)) return { result: 'ok', used: n };
+  return { result: firstLetterMatches(g, word) ? 'ok' : 'wrong', used: 1 };
+}
+
+/**
+ * Split typed input into graphemes.
+ * @param {string} input
+ */
+export function typedGraphemes(input) {
+  return graphemes(input.normalize('NFC')).map((g) => g.s);
+}
+
+/**
+ * Consume typed input against a sequence of expected words (see matchStep).
  * @param {string} input
  * @param {(offset: number) => string|null} expectedAt  expected word at
  *   offset 0, 1, 2… from the current position, or null past the end
- * @returns {('ok'|'wrong'|'skip')[]} one entry per consumed step; 'ok'
- *   advances to the next word, 'wrong' does not
+ * @returns {('ok'|'wrong'|'skip')[]} one entry per step; 'ok' advances to the
+ *   next word, 'wrong' does not
  */
 export function consumeInput(input, expectedAt) {
   /** @type {('ok'|'wrong'|'skip')[]} */
   const out = [];
-  const gs = graphemes(input.normalize('NFC')).map((g) => g.s);
+  let gs = typedGraphemes(input);
   let offset = 0;
-  let i = 0;
-  while (i < gs.length) {
+  while (gs.length) {
     const word = expectedAt(offset);
     if (word === null) break;
-    const g = gs[i];
-    if (isIgnorableInput(g)) {
-      out.push('skip');
-      i++;
-      continue;
-    }
-    const wordGs = graphemes(word.normalize('NFC')).map((x) => x.s);
-    const n = wordGs.length;
-    if (n > 1 && i + n <= gs.length && sameWord(gs.slice(i, i + n).join(''), word)) {
-      out.push('ok');
-      i += n;
-      offset++;
-      continue;
-    }
-    if (firstLetterMatches(g, word)) {
-      out.push('ok');
-      offset++;
-    } else {
-      out.push('wrong');
-    }
-    i++;
+    const { result, used } = matchStep(gs, word);
+    out.push(result);
+    gs = gs.slice(used);
+    if (result === 'ok') offset++;
   }
   return out;
 }
